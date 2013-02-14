@@ -39,8 +39,6 @@ void loop() {
   int responseLow = (int) response[3];
   int ppm = (256*responseHigh)+responseLow;
   //Serial.println(ppm,DEC);
-  matrix.print(ppm,DEC);
-  
 
 
   //delay(1000);  
