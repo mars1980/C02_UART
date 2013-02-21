@@ -24,7 +24,7 @@
 SoftwareSerial mySerial(A0, A1); // RX, TX respectively
 Adafruit_7segment matrix = Adafruit_7segment();
 RTC_DS1307 RTC;
-File dataFile = SD.open("datalog.txt", FILE_WRITE);
+File dataFile = SD.open("datalog.csv", FILE_WRITE);
 
 
 
@@ -80,7 +80,7 @@ void loop() {
   // create a string for ppm, cast the data, open up the file
   String ppmString = "";
   ppmString = String(ppm);
-  dataFile = SD.open("datalog.txt", FILE_WRITE);
+  dataFile = SD.open("datalog.csv", FILE_WRITE);
 
   // WRITE THE CO2 READINGS WITH A TIME STAMP
   if (dataFile) {
@@ -102,7 +102,7 @@ void loop() {
     Serial.println(ppmString);
   }  
   else {
-    Serial.println("error opening datalog.txt");
+    Serial.println("error opening datalog.csv");
   } 
 }
 
