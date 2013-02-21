@@ -24,11 +24,12 @@
 SoftwareSerial mySerial(A0, A1); // RX, TX respectively
 Adafruit_7segment matrix = Adafruit_7segment();
 RTC_DS1307 RTC;
-File dataFile = SD.open("datalog.csv", FILE_WRITE);
+File dataFile = SD.open("datalog1.csv", FILE_WRITE);
 
 
 
-byte cmd[9] = {0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79}; 
+byte cmd[9] = {
+  0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79}; 
 char response[9]; 
 const int chipSelect = 10;
 
@@ -59,19 +60,23 @@ void setup()
     return;
   }
   Serial.println("card initialized.");
+  //printHeader(); 
+
+
+
 }
 
 
 void loop() {
   DateTime now = RTC.now();
-  
+
   //PING CO2, READ RESPONSE, GET READINGS AND CONVERT TO PPM
   mySerial.write(cmd,9);
   mySerial.readBytes(response, 9);
   int responseHigh = (int) response[2];
   int responseLow = (int) response[3];
   int ppm = (256*responseHigh)+responseLow;
-  
+
   //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
   //Serial.println(ppm,DEC);
   //matrix.print(ppm,DEC);
@@ -80,31 +85,64 @@ void loop() {
   // create a string for ppm, cast the data, open up the file
   String ppmString = "";
   ppmString = String(ppm);
-  dataFile = SD.open("datalog.csv", FILE_WRITE);
+    dataFile = SD.open("datalog1.csv", FILE_WRITE);
+  
+    // WRITE THE CO2 READINGS WITH A TIME STAMP
+    if (dataFile) {
+      
+      dataFile.print(ppmString);
+      dataFile.print(',');
+      dataFile.print(now.year(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.month(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.day(), DEC);
+      dataFile.print(' ');
+      dataFile.print(now.hour(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.minute(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.second(), DEC);
+      dataFile.println();
+      dataFile.close();
+      Serial.println(ppmString);
+    }  
+    else {
+      Serial.println("error opening datalog1.csv");
+    } 
 
-  // WRITE THE CO2 READINGS WITH A TIME STAMP
+
+}
+
+void printHeader()
+{
+  ///open up the .csv, write a header, close file
+  dataFile = SD.open("datalog1.csv", FILE_WRITE);
   if (dataFile) {
-    dataFile.print(ppmString);
-    dataFile.print(',');
-    dataFile.print(now.year(), DEC);
-    dataFile.print(',');
-    dataFile.print(now.month(), DEC);
-    dataFile.print(',');
-    dataFile.print(now.day(), DEC);
-    dataFile.print(' ');
-    dataFile.print(now.hour(), DEC);
-    dataFile.print(',');
-    dataFile.print(now.minute(), DEC);
-    dataFile.print(',');
-    dataFile.print(now.second(), DEC);
-    dataFile.println();
-    dataFile.close();
-    Serial.println(ppmString);
-  }  
-  else {
-    Serial.println("error opening datalog.csv");
+    {
+      dataFile.print("ppm"); 
+      dataFile.print(",");
+      dataFile.print("year");
+      dataFile.print(","); 
+      dataFile.print("month");
+      dataFile.print(",");
+      dataFile.print("day");
+      dataFile.print(",");
+      dataFile.print("minute");
+      dataFile.print(",");
+      dataFile.print("second");
+      dataFile.print(",");
+      dataFile.println();
+      dataFile.close();
+      Serial.println("printing header for real...");
+    }
   } 
 }
+
+
+
+
+
 
 
 
