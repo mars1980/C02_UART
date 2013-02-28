@@ -33,7 +33,7 @@ byte cmd[9] = {
 char response[9]; 
 const int chipSelect = 10;
 unsigned long time;
-unsigned long convertedTime; //converting time into seconds 
+int calibrationTime = 180; //warm up time for C02 sensor (3min = 180sec)
 
 
 
@@ -45,6 +45,16 @@ void setup()
   Wire.begin();
   RTC.begin();
   matrix.setBrightness(10); //0-15
+  
+    //give the sensor some time to calibrate
+  Serial.print("calibrating sensor (3min) ");
+  for(int i = 0; i < calibrationTime; i++){
+    Serial.print(".");
+    delay(1000);
+  }
+  Serial.println(" done");
+  Serial.println("SENSOR ACTIVE");
+  delay(50);
 
   if (! RTC.isrunning())
   {
@@ -53,7 +63,7 @@ void setup()
     RTC.adjust(DateTime(__DATE__, __TIME__));
   }
 
-  Serial.print("Initializing SD card...");
+  // Serial.print("Initializing SD card...");
   pinMode(10, OUTPUT);
 
   // see if the card is present and can be initialized:
@@ -61,16 +71,21 @@ void setup()
     Serial.println("Card failed, or not present");
     return;
   }
-  Serial.println("card initialized.");
+  //Serial.println("card initialized.");
   //printHeader(); 
   //readSd(); //fuction to read the contents of the SD
+  
+
+  
+  
 
 
 
 }
 
 
-void loop() {
+void loop() 
+{
   DateTime now = RTC.now();
 
   //PING CO2, READ RESPONSE, GET READINGS AND CONVERT TO PPM
@@ -88,44 +103,37 @@ void loop() {
   // create a string for ppm, cast the data, open up the file
   String ppmString = "";
   ppmString = String(ppm);
-  dataFile = SD.open("datalog1.csv", FILE_WRITE);
 
 
-
-  if (dataFile) {
-
-    dataFile.print(ppmString);
-    dataFile.print(',');
-    dataFile.print(now.year(), DEC);
-    dataFile.print(',');
-    dataFile.print(now.month(), DEC);
-    dataFile.print(',');
-    dataFile.print(now.day(), DEC);
-    dataFile.print(' ');
-    dataFile.print(now.hour(), DEC);
-    dataFile.print(',');
-    dataFile.print(now.minute(), DEC);
-    dataFile.print(',');
-    dataFile.print(now.second(), DEC);
-    dataFile.println();
-    dataFile.close();
-    Serial.println(ppmString);
-  }  
-  else {
-    Serial.println("error opening datalog1.csv");
-  }
-
-
-
-}
-
-void timer()
-{
   time = millis(); //1s = 1000
-  int convertedTime = time/1000; //seconds (3min = 180sec)
 
 
+      dataFile = SD.open("datalog1.csv", FILE_WRITE);
+      if (dataFile) 
+        {
+          dataFile.print(ppmString);
+          dataFile.print(',');
+          dataFile.print(now.year(), DEC);
+          dataFile.print(',');
+          dataFile.print(now.month(), DEC);
+          dataFile.print(',');
+          dataFile.print(now.day(), DEC);
+          dataFile.print(' ');
+          dataFile.print(now.hour(), DEC);
+          dataFile.print(',');
+          dataFile.print(now.minute(), DEC);
+          dataFile.print(',');
+          dataFile.print(now.second(), DEC);
+          dataFile.println();
+          dataFile.close();
+          Serial.println(ppmString);
+        }  
+      else 
+      {
+        Serial.println("error opening datalog1.csv");
+       }  
 }
+
 
 void printHeader()
 {
@@ -169,6 +177,7 @@ void readSd()
     Serial.println("error opening datalog1.csv");
   }
 }
+
 
 
 
