@@ -32,6 +32,8 @@ byte cmd[9] = {
   0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79}; 
 char response[9]; 
 const int chipSelect = 10;
+unsigned long time;
+unsigned long convertedTime; //converting time into seconds 
 
 
 
@@ -61,6 +63,7 @@ void setup()
   }
   Serial.println("card initialized.");
   //printHeader(); 
+  //readSd(); //fuction to read the contents of the SD
 
 
 
@@ -85,31 +88,41 @@ void loop() {
   // create a string for ppm, cast the data, open up the file
   String ppmString = "";
   ppmString = String(ppm);
-    dataFile = SD.open("datalog1.csv", FILE_WRITE);
-  
-    // WRITE THE CO2 READINGS WITH A TIME STAMP
-    if (dataFile) {
-      
-      dataFile.print(ppmString);
-      dataFile.print(',');
-      dataFile.print(now.year(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.month(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.day(), DEC);
-      dataFile.print(' ');
-      dataFile.print(now.hour(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.minute(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.second(), DEC);
-      dataFile.println();
-      dataFile.close();
-      Serial.println(ppmString);
-    }  
-    else {
-      Serial.println("error opening datalog1.csv");
-    } 
+  dataFile = SD.open("datalog1.csv", FILE_WRITE);
+
+
+
+  if (dataFile) {
+
+    dataFile.print(ppmString);
+    dataFile.print(',');
+    dataFile.print(now.year(), DEC);
+    dataFile.print(',');
+    dataFile.print(now.month(), DEC);
+    dataFile.print(',');
+    dataFile.print(now.day(), DEC);
+    dataFile.print(' ');
+    dataFile.print(now.hour(), DEC);
+    dataFile.print(',');
+    dataFile.print(now.minute(), DEC);
+    dataFile.print(',');
+    dataFile.print(now.second(), DEC);
+    dataFile.println();
+    dataFile.close();
+    Serial.println(ppmString);
+  }  
+  else {
+    Serial.println("error opening datalog1.csv");
+  }
+
+
+
+}
+
+void timer()
+{
+  time = millis(); //1s = 1000
+  int convertedTime = time/1000; //seconds (3min = 180sec)
 
 
 }
@@ -138,6 +151,28 @@ void printHeader()
     }
   } 
 }
+///function to read back the contents of the file via Serial
+void readSd()
+{
+
+  File dataFile = SD.open("datalog1.csv");
+
+  // if the file is available, write to it:
+  if (dataFile) {
+    while (dataFile.available()) {
+      Serial.write(dataFile.read());
+    }
+    dataFile.close();
+  }  
+  // if the file isn't open, pop up an error:
+  else {
+    Serial.println("error opening datalog1.csv");
+  }
+}
+
+
+
+
 
 
 
