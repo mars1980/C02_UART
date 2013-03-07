@@ -6,9 +6,9 @@
 //Michael Doherty - Bitponics
 //Crys Moore
 //2.7.12
-//update 2.21.12
+//update 3.7.12
 
-//simple sketch to get sensor readings via UART and print them to Adafruit 7 segment backpack.
+// sketch to get sensor readings via UART and print them to Adafruit 7 segment backpack.
 //Sensor readings are time stamped and logged to the SD card. 
 
 
@@ -33,7 +33,7 @@ byte cmd[9] = {
 char response[9]; 
 const int chipSelect = 10;
 unsigned long time;
-int calibrationTime = 180; //warm up time for C02 sensor (3min = 180sec)
+int calibrationTime = 1; //warm up time for C02 sensor (3min = 180sec)
 float lipoCalibration=1.1;//1.051; //was 1.1
 //reading at 3.5 on voltmeter; 3.8 from arduino
 float voltage;
@@ -87,6 +87,7 @@ void setup()
 void loop() 
 {
   DateTime now = RTC.now();
+  time = millis(); //1s = 1000
 
   //PING CO2, READ RESPONSE, GET READINGS AND CONVERT TO PPM
   mySerial.write(cmd,9);
@@ -104,53 +105,76 @@ void loop()
   Serial.print("V   ");
   Serial.println();
 
-  time = millis(); //1s = 1000
 
-  if (voltage < threshold)
+
+  char CH_status_print[][4]=
   {
-    // matrix.print(battMsg,DEC);
-    //  matrix.writeDisplay();
-    Serial.println('battery is low');
+    "off","on ","ok ","err"
+  };
 
+  unsigned char CH_Status=0;
+  unsigned int ADC6=analogRead(6);
+  if(ADC6>900)
+  {
+    CH_Status = 0;//sleeping
   }
-  else if (voltage > threshold)
+  else if(ADC6>550)
   {
-    // create a string for ppm, cast the data, open up the file
-    String ppmString = "";
-    //    ppmString = String(ppm);
+    CH_Status = 1;//charging
+  }
+  else if(ADC6>350)
+  {
+    CH_Status = 2;//done
+  }
+  else
+  {
+    CH_Status = 3;//error
+  }
 
-    //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
-    //Serial.println(ppm,DEC);
-    matrix.print(ppm,DEC);  
-    matrix.writeDisplay();
-    dataFile = SD.open("datalog1.csv", FILE_WRITE);
-    if (dataFile) 
+    if (voltage < threshold || CH_Status == 3 || CH_Status == 0 )
     {
-      dataFile.print(ppmString);
-      dataFile.print(',');
-      dataFile.print(now.year(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.month(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.day(), DEC);
-      dataFile.print(' ');
-      dataFile.print(now.hour(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.minute(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.second(), DEC);
-      dataFile.print(',');
-      dataFile.print(voltage);
-      dataFile.println();
-      dataFile.close();
-      // Serial.println(ppmString);
-    }  
-    else 
-    {
-      Serial.println("error opening datalog1.csv");
+      // matrix.print(battMsg,DEC);
+      //  matrix.writeDisplay();
+      Serial.println('do not record data');
     }
-    Serial.println("battery is GOOD");
-  }  
+        else if (voltage > threshold)
+      {
+        // create a string for ppm, cast the data, open up the file
+        String ppmString = "";
+        //    ppmString = String(ppm);
+    
+        //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
+        //Serial.println(ppm,DEC);
+        matrix.print(ppm,DEC);  
+        matrix.writeDisplay();
+        dataFile = SD.open("datalog1.csv", FILE_WRITE);
+        if (dataFile) 
+        {
+          dataFile.print(ppmString);
+          dataFile.print(',');
+          dataFile.print(now.year(), DEC);
+          dataFile.print(',');
+          dataFile.print(now.month(), DEC);
+          dataFile.print(',');
+          dataFile.print(now.day(), DEC);
+          dataFile.print(' ');
+          dataFile.print(now.hour(), DEC);
+          dataFile.print(',');
+          dataFile.print(now.minute(), DEC);
+          dataFile.print(',');
+          dataFile.print(now.second(), DEC);
+          dataFile.print(',');
+          dataFile.print(voltage);
+          dataFile.println();
+          dataFile.close();
+          // Serial.println(ppmString);
+        }  
+        else 
+        {
+          Serial.println("error opening datalog1.csv");
+        }
+        Serial.println("battery is all GOOD");
+      }  
 }
 
 
@@ -173,17 +197,6 @@ void readSd()
     Serial.println("error opening datalog1.csv");
   }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
