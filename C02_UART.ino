@@ -34,19 +34,26 @@ char response[9];
 const int chipSelect = 10;
 unsigned long time;
 int calibrationTime = 180; //warm up time for C02 sensor (3min = 180sec)
+float lipoCalibration=1.1;//1.051; //was 1.1
+//reading at 3.5 on voltmeter; 3.8 from arduino
+float voltage;
+int BatteryValue;
+float threshold = 4.0; //battery threshold
+String battMsg = "batt";
 
 
 
 void setup() 
 {
   Serial.begin(9600);
+  analogReference(INTERNAL); 
   mySerial.begin(9600);
   matrix.begin(0x70);
   Wire.begin();
   RTC.begin();
-  matrix.setBrightness(10); //0-15
-  
-    //give the sensor some time to calibrate
+  matrix.setBrightness(0); //0-15
+
+  //give the sensor some time to calibrate
   Serial.print("calibrating sensor (3min) ");
   for(int i = 0; i < calibrationTime; i++){
     Serial.print(".");
@@ -72,16 +79,9 @@ void setup()
     return;
   }
   //Serial.println("card initialized.");
-  //printHeader(); 
   //readSd(); //fuction to read the contents of the SD
-  
-
-  
-  
-
-
-
 }
+////////////////////////////////////////////////////////////END SETUP
 
 
 void loop() 
@@ -95,70 +95,66 @@ void loop()
   int responseLow = (int) response[3];
   int ppm = (256*responseHigh)+responseLow;
 
-  //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
-  //Serial.println(ppm,DEC);
-  //matrix.print(ppm,DEC);
-
-
-  // create a string for ppm, cast the data, open up the file
-  String ppmString = "";
-  ppmString = String(ppm);
-
+  //read the battery and convert to voltage
+  BatteryValue = analogRead(A7);
+  voltage = BatteryValue * (lipoCalibration / 1024)* (10+2)/2;  //Voltage devider
+  //
+  Serial.print("Battery Voltage -> ");
+  Serial.print(voltage);
+  Serial.print("V   ");
+  Serial.println();
 
   time = millis(); //1s = 1000
 
+  if (voltage < threshold)
+  {
+    // matrix.print(battMsg,DEC);
+    //  matrix.writeDisplay();
+    Serial.println('battery is low');
 
-      dataFile = SD.open("datalog1.csv", FILE_WRITE);
-      if (dataFile) 
-        {
-          dataFile.print(ppmString);
-          dataFile.print(',');
-          dataFile.print(now.year(), DEC);
-          dataFile.print(',');
-          dataFile.print(now.month(), DEC);
-          dataFile.print(',');
-          dataFile.print(now.day(), DEC);
-          dataFile.print(' ');
-          dataFile.print(now.hour(), DEC);
-          dataFile.print(',');
-          dataFile.print(now.minute(), DEC);
-          dataFile.print(',');
-          dataFile.print(now.second(), DEC);
-          dataFile.println();
-          dataFile.close();
-          Serial.println(ppmString);
-        }  
-      else 
-      {
-        Serial.println("error opening datalog1.csv");
-       }  
-}
+  }
+  else if (voltage > threshold)
+  {
+    // create a string for ppm, cast the data, open up the file
+    String ppmString = "";
+    //    ppmString = String(ppm);
 
-
-void printHeader()
-{
-  ///open up the .csv, write a header, close file
-  dataFile = SD.open("datalog1.csv", FILE_WRITE);
-  if (dataFile) {
+    //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
+    //Serial.println(ppm,DEC);
+    matrix.print(ppm,DEC);  
+    matrix.writeDisplay();
+    dataFile = SD.open("datalog1.csv", FILE_WRITE);
+    if (dataFile) 
     {
-      dataFile.print("ppm"); 
-      dataFile.print(",");
-      dataFile.print("year");
-      dataFile.print(","); 
-      dataFile.print("month");
-      dataFile.print(",");
-      dataFile.print("day");
-      dataFile.print(",");
-      dataFile.print("minute");
-      dataFile.print(",");
-      dataFile.print("second");
-      dataFile.print(",");
+      dataFile.print(ppmString);
+      dataFile.print(',');
+      dataFile.print(now.year(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.month(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.day(), DEC);
+      dataFile.print(' ');
+      dataFile.print(now.hour(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.minute(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.second(), DEC);
+      dataFile.print(',');
+      dataFile.print(voltage);
       dataFile.println();
       dataFile.close();
-      Serial.println("printing header for real...");
+      // Serial.println(ppmString);
+    }  
+    else 
+    {
+      Serial.println("error opening datalog1.csv");
     }
-  } 
+    Serial.println("battery is GOOD");
+  }  
 }
+
+
+
 ///function to read back the contents of the file via Serial
 void readSd()
 {
@@ -177,6 +173,13 @@ void readSd()
     Serial.println("error opening datalog1.csv");
   }
 }
+
+
+
+
+
+
+
 
 
 
