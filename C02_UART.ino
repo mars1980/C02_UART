@@ -51,7 +51,7 @@ void setup()
   matrix.begin(0x70);
   Wire.begin();
   RTC.begin();
-  matrix.setBrightness(0); //0-15
+  matrix.setBrightness(5); //0-15 (11 drawing 50mA of current from the NCP1402-5V Step-Up Breakout)
 
   //give the sensor some time to calibrate
   Serial.print("calibrating sensor (3min) ");
@@ -131,50 +131,51 @@ void loop()
     CH_Status = 3;//error
   }
 
-    if (voltage < threshold || CH_Status == 3 || CH_Status == 0 )
+  if (voltage < threshold || CH_Status == 3 || CH_Status == 0 )
+  {
+    //If you wnat even more control, you can call writeDigitRaw(location,bitmask) to draw a raw 8-bit mask (as stored in a uint8_t) to tht location.
+      //writeDigitRaw(location,bitmask)
+    //  matrix.writeDisplay();
+    Serial.println('do not record data');
+  }
+  else if (voltage > threshold)
+  {
+    // create a string for ppm, cast the data, open up the file
+    String ppmString = "";
+    //    ppmString = String(ppm);
+
+    //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
+    //Serial.println(ppm,DEC);
+    matrix.println(ppm);  
+    matrix.writeDisplay();
+    dataFile = SD.open("datalog1.csv", FILE_WRITE);
+    if (dataFile) 
     {
-      // matrix.print(battMsg,DEC);
-      //  matrix.writeDisplay();
-      Serial.println('do not record data');
+      dataFile.print(ppmString);
+      dataFile.print(',');
+      dataFile.print(now.year(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.month(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.day(), DEC);
+      dataFile.print(' ');
+      dataFile.print(now.hour(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.minute(), DEC);
+      dataFile.print(',');
+      dataFile.print(now.second(), DEC);
+      dataFile.print(',');
+      dataFile.print(voltage);
+      dataFile.println();
+      dataFile.close();
+      // Serial.println(ppmString);
+    }  
+    else 
+    {
+      Serial.println("error opening datalog1.csv");
     }
-        else if (voltage > threshold)
-      {
-        // create a string for ppm, cast the data, open up the file
-        String ppmString = "";
-        //    ppmString = String(ppm);
-    
-        //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
-        //Serial.println(ppm,DEC);
-        matrix.print(ppm,DEC);  
-        matrix.writeDisplay();
-        dataFile = SD.open("datalog1.csv", FILE_WRITE);
-        if (dataFile) 
-        {
-          dataFile.print(ppmString);
-          dataFile.print(',');
-          dataFile.print(now.year(), DEC);
-          dataFile.print(',');
-          dataFile.print(now.month(), DEC);
-          dataFile.print(',');
-          dataFile.print(now.day(), DEC);
-          dataFile.print(' ');
-          dataFile.print(now.hour(), DEC);
-          dataFile.print(',');
-          dataFile.print(now.minute(), DEC);
-          dataFile.print(',');
-          dataFile.print(now.second(), DEC);
-          dataFile.print(',');
-          dataFile.print(voltage);
-          dataFile.println();
-          dataFile.close();
-          // Serial.println(ppmString);
-        }  
-        else 
-        {
-          Serial.println("error opening datalog1.csv");
-        }
-        Serial.println("battery is all GOOD");
-      }  
+    Serial.println("battery is all GOOD");
+  }  
 }
 
 
@@ -197,6 +198,7 @@ void readSd()
     Serial.println("error opening datalog1.csv");
   }
 }
+
 
 
 
