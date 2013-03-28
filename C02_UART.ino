@@ -55,7 +55,7 @@ char response[9];
 const int chipSelect = 10;
 unsigned long time;
 int calibrationTime = 1; //warm up time for C02 sensor (3min = 180sec)
-float lipoCalibration=1.1;//1.051; //was 1.1
+float lipoCalibration=.658;//1.051; //was 1.1
 //reading at 3.5 on voltmeter; 3.8 from arduino
 float voltage;
 int BatteryValue;
@@ -68,6 +68,7 @@ void setup()
 {
   Serial.begin(9600);
   analogReference(INTERNAL); 
+  pinMode(A2,INPUT);
   mySerial.begin(9600);
   matrix.begin(0x70);
   Wire.begin();
@@ -118,7 +119,7 @@ void loop()
   int ppm = (256*responseHigh)+responseLow;
 
   //read the battery and convert to voltage
-  BatteryValue = analogRead(A7);
+  BatteryValue = analogRead(A2);
   voltage = BatteryValue * (lipoCalibration / 1024)* (10+2)/2;  //Voltage divider 
   //
   Serial.print("Battery Voltage -> ");
