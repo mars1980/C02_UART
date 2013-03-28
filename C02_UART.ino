@@ -1,15 +1,36 @@
 //running Arduino 1.0 IDE
 //MH-Z14 CO2 Module from Zhengzhou Winsen Electronics Technology Co., Ltd
 //Seeeduino Stalker v2.3
-//http://www.adafruit.com/products/878
 
 //Michael Doherty - Bitponics
 //Crys Moore
 //2.7.12
-//update 3.7.12
+//update 3.38.12
 
 // sketch to get sensor readings via UART and print them to Adafruit 7 segment backpack.
 //Sensor readings are time stamped and logged to the SD card. 
+
+/*************************************************** 
+ * This is a library for our I2C LED Backpacks
+ * 
+ * Designed specifically to work with the Adafruit LED 7-Segment backpacks 
+ * ----> http://www.adafruit.com/products/881
+ * ----> http://www.adafruit.com/products/880
+ * ----> http://www.adafruit.com/products/879
+ * ----> http://www.adafruit.com/products/878
+ * 
+ * These displays use I2C to communicate, 2 pins are required to 
+ * interface. There are multiple selectable I2C addresses. For backpacks
+ * with 2 Address Select pins: 0x70, 0x71, 0x72 or 0x73. For backpacks
+ * with 3 Address Select pins: 0x70 thru 0x77
+ * 
+ * Adafruit invests time and resources providing this open source code, 
+ * please support Adafruit and open-source hardware by purchasing 
+ * products from Adafruit!
+ * 
+ * Written by Limor Fried/Ladyada for Adafruit Industries.  
+ * BSD license, all text above must be included in any redistribution
+ ****************************************************/
 
 
 #include <SoftwareSerial.h>
@@ -39,7 +60,7 @@ float lipoCalibration=1.1;//1.051; //was 1.1
 float voltage;
 int BatteryValue;
 float threshold = 4.0; //battery threshold
-String battMsg = "batt";
+
 
 
 
@@ -107,31 +128,9 @@ void loop()
 
 
 
-  char CH_status_print[][4]=
-  {
-    "off","on ","ok ","err"
-  };
+ 
 
-  unsigned char CH_Status=0;
-  unsigned int ADC6=analogRead(6);
-  if(ADC6>900)
-  {
-    CH_Status = 0;//sleeping
-  }
-  else if(ADC6>550)
-  {
-    CH_Status = 1;//charging
-  }
-  else if(ADC6>350)
-  {
-    CH_Status = 2;//done
-  }
-  else
-  {
-    CH_Status = 3;//error
-  }
-
-  if (voltage < threshold || CH_Status == 3 || CH_Status == 0 )
+  if (voltage < threshold)
   {  //display the battery low msg 'Batt'
     matrix.print(0xBAFF, HEX);
     matrix.writeDisplay();
