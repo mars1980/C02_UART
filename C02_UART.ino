@@ -54,8 +54,8 @@ byte cmd[9] = {
 char response[9]; 
 const int chipSelect = 10;
 unsigned long time;
-int calibrationTime = 1; //warm up time for C02 sensor (3min = 180sec)
-float lipoCalibration=.658;//1.051; //was 1.1
+int calibrationTime = 180; //warm up time for C02 sensor (3min = 180sec)
+float lipoCalibration=.685; //was 1.1
 //reading at 3.5 on voltmeter; 3.8 from arduino
 float voltage;
 int BatteryValue;
@@ -79,6 +79,10 @@ void setup()
   Serial.print("calibrating sensor (3min) ");
   for(int i = 0; i < calibrationTime; i++){
     Serial.print(".");
+    if((millis()/1000) < calibrationTime){
+    matrix.println(calibrationTime -(millis()/1000));
+    matrix.writeDisplay();
+  }
     delay(1000);
   }
   Serial.println(" done");
@@ -141,7 +145,7 @@ void loop()
   {
     // create a string for ppm, cast the data, open up the file
     String ppmString = "";
-    //    ppmString = String(ppm);
+        ppmString = String(ppm);
 
     //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
     //Serial.println(ppm,DEC);
