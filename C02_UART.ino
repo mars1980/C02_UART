@@ -98,7 +98,7 @@ void loop()
 
   //read the battery and convert to voltage
   BatteryValue = analogRead(A7);
-  voltage = BatteryValue * (lipoCalibration / 1024)* (10+2)/2;  //Voltage devider
+  voltage = BatteryValue * (lipoCalibration / 1024)* (10+2)/2;  //Voltage divider 
   //
   Serial.print("Battery Voltage -> ");
   Serial.print(voltage);
@@ -132,10 +132,9 @@ void loop()
   }
 
   if (voltage < threshold || CH_Status == 3 || CH_Status == 0 )
-  {
-    //If you wnat even more control, you can call writeDigitRaw(location,bitmask) to draw a raw 8-bit mask (as stored in a uint8_t) to tht location.
-      //writeDigitRaw(location,bitmask)
-    //  matrix.writeDisplay();
+  {  //display the battery low msg 'Batt'
+    matrix.print(0xBAFF, HEX);
+    matrix.writeDisplay();
     Serial.println('do not record data');
   }
   else if (voltage > threshold)
@@ -198,6 +197,7 @@ void readSd()
     Serial.println("error opening datalog1.csv");
   }
 }
+
 
 
 
