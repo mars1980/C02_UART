@@ -54,8 +54,8 @@ byte cmd[9] = {
 char response[9]; 
 const int chipSelect = 10;
 unsigned long time;
-int calibrationTime = 180; //warm up time for C02 sensor (3min = 180sec)
-float lipoCalibration=.685; //was 1.1
+int calibrationTime = 10; //warm up time for C02 sensor (3min = 180sec)
+float lipoCalibration=.685; //was 1.1 //.685
 //reading at 3.5 on voltmeter; 3.8 from arduino
 float voltage;
 int BatteryValue;
@@ -75,14 +75,14 @@ void setup()
   RTC.begin();
   matrix.setBrightness(5); //0-15 (11 drawing 50mA of current from the NCP1402-5V Step-Up Breakout)
 
-  //give the sensor some time to calibrate
+  //give the sensor some time to calibrate and countdown to the 7seg
   Serial.print("calibrating sensor (3min) ");
   for(int i = 0; i < calibrationTime; i++){
     Serial.print(".");
     if((millis()/1000) < calibrationTime){
-    matrix.println(calibrationTime -(millis()/1000));
-    matrix.writeDisplay();
-  }
+      matrix.println(calibrationTime -(millis()/1000));
+      matrix.writeDisplay();
+    }
     delay(1000);
   }
   Serial.println(" done");
@@ -93,7 +93,10 @@ void setup()
   {
     Serial.println("RTC is NOT running!");
     // following line sets the RTC to the date & time this sketch was compiled
-    RTC.adjust(DateTime(__DATE__, __TIME__));
+  }
+  else
+  {
+    RTC.adjust(DateTime(__DATE__, __TIME__)); 
   }
 
   // Serial.print("Initializing SD card...");
@@ -133,7 +136,7 @@ void loop()
 
 
 
- 
+
 
   if (voltage < threshold)
   {  //display the battery low msg 'Batt'
@@ -145,29 +148,24 @@ void loop()
   {
     // create a string for ppm, cast the data, open up the file
     String ppmString = "";
-        ppmString = String(ppm);
+    ppmString = String(ppm);
 
     //PRINT c02 OUT ON THE SEVSEG BACKPACK & SERIAL
     //Serial.println(ppm,DEC);
     matrix.println(ppm);  
     matrix.writeDisplay();
+    
+    char timeStamp[20]; 
+    sprintf(timeStamp,"%04i-%02i-%02iT%02i:%02i:%02i", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()); 
+    
+    ///********************************read every .5 sec and log every 5 sec***********************************
     dataFile = SD.open("datalog1.csv", FILE_WRITE);
     if (dataFile) 
     {
       dataFile.print(ppmString);
       dataFile.print(',');
-      dataFile.print(now.year(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.month(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.day(), DEC);
-      dataFile.print(' ');
-      dataFile.print(now.hour(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.minute(), DEC);
-      dataFile.print(',');
-      dataFile.print(now.second(), DEC);
-      dataFile.print(',');
+      dataFile.print(timeStamp);
+      dataFile.print(','); 
       dataFile.print(voltage);
       dataFile.println();
       dataFile.close();
@@ -180,8 +178,7 @@ void loop()
     Serial.println("battery is all GOOD");
   }  
 }
-
-
+//******************add in the sd formmatter stuff************************
 
 ///function to read back the contents of the file via Serial
 void readSd()
@@ -201,6 +198,7 @@ void readSd()
     Serial.println("error opening datalog1.csv");
   }
 }
+
 
 
 
